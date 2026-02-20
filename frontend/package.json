@@ -1,0 +1,8 @@
+{
+  "name": "monorepo-frontend",
+  "private": true,
+  "scripts": {
+    "dev:admin": "pnpm --filter admin dev",
+    "build:admin": "pnpm --filter admin build"
+  }
+}

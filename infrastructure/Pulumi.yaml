@@ -1,0 +1,6 @@
+name: monorepo-chassis-infra
+runtime:
+  name: nodejs
+  options:
+    packagemanager: pnpm
+description: Infrastructure as Code for Monorepo Chassis using Pulumi (TypeScript)

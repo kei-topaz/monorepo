@@ -1,0 +1,36 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "Service API",
+    "description" : "Auto-generated OpenAPI Spec",
+    "version" : "1.0-SNAPSHOT"
+  },
+  "externalDocs" : {
+    "description" : "Detailed API Usage Guides",
+    "url" : "https://wiki.example.com/api"
+  },
+  "servers" : [ ],
+  "tags" : [ ],
+  "paths" : {
+    "/openapi.json" : {
+      "get" : {
+        "tags" : [ ],
+        "parameters" : [ ],
+        "responses" : { },
+        "deprecated" : false
+      }
+    },
+    "/health" : {
+      "get" : {
+        "tags" : [ ],
+        "parameters" : [ ],
+        "responses" : { },
+        "deprecated" : false
+      }
+    }
+  },
+  "components" : {
+    "schemas" : { },
+    "examples" : { }
+  }
+}

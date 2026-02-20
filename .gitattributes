@@ -1,0 +1,43 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+# Explicitly declare text files to ensure they are normalized.
+# This ensures that files are checked into the repo with LF,
+# but checked out with the OS-specific line ending.
+*.kt text
+*.kts text
+*.java text
+*.xml text
+*.md text
+*.gradle text
+*.properties text
+*.gitignore text
+*.gitattributes text
+*.yml text
+*.yaml text
+*.json text
+*.sql text
+
+# Declare files that will always have CRLF line endings on checkout.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Declare files that will always have LF line endings on checkout.
+*.sh text eol=lf
+gradlew text eol=lf
+
+# Denote all files that are truly binary and should not be modified.
+*.jar binary
+*.zip binary
+*.tar.gz binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mov binary
+*.mp4 binary
+*.mp3 binary
+*.flv binary
+*.fla binary
+*.swf binary

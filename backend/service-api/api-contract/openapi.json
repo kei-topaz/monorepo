@@ -1,0 +1,78 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "Service API",
+    "description" : "Auto-generated OpenAPI Spec",
+    "version" : "1.0.0"
+  },
+  "externalDocs" : {
+    "url" : "/"
+  },
+  "servers" : [ ],
+  "tags" : [ ],
+  "paths" : {
+    "/health" : {
+      "get" : {
+        "tags" : [ ],
+        "parameters" : [ ],
+        "responses" : { },
+        "deprecated" : false
+      }
+    },
+    "/api/v1/users" : {
+      "post" : {
+        "tags" : [ ],
+        "parameters" : [ ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/com.project.api.handlers.user.RegisterRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : { "description" : "Success", "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/com.project.api.handlers.user.RegisterResponse"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "com.project.api.handlers.user.RegisterRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "title" : "Email"
+          }
+        },
+        "required" : [ "email" ],
+        "title" : "RegisterRequest"
+      },
+      "com.project.api.handlers.user.RegisterResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "title" : "UserId"
+          }
+        },
+        "required" : [ "id" ],
+        "title" : "RegisterResponse"
+      }
+    },
+    "examples" : { }
+  }
+}
