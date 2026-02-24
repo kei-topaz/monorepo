@@ -1,0 +1,9 @@
+config:
+  aws:region: ap-northeast-2
+  # The environment suffix used across all AWS resource names
+  infra:environment: prod
+  # The core prefix used across all AWS resource names
+  infra:projectCode: dc
+  # The domain name validated in AWS ACM for the App Load Balancer TLS certificate
+  infra:domainName: dc.triptopaz.com
+encryptionsalt: v1:g/xzWogWQUQ=:v1:lkSvpK6TymjXZtNA:8CTeJUtqNWd0xgoVAu1ZI8YyWM512A==

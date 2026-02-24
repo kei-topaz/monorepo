@@ -1,4 +1,4 @@
-name: monorepo-chassis-infra
+name: infra
 runtime:
   name: nodejs
   options:
