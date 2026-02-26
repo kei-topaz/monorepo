@@ -5,6 +5,7 @@ import { createDatabase } from "./src/database";
 import { createCache } from "./src/cache";
 import { createSharedCompute, createAppService } from "./src/compute";
 import { createEcrRepository } from "./src/ecr";
+import { createSsmBastion } from "./src/bastion";
 // import { createSecurityNotifications } from "./src/notifications";
 
 // 1. Core Configuration
@@ -43,6 +44,17 @@ const cacheStack = createCache(
     environment,
     vpcStack.vpcId,
     vpcStack.isolatedSubnetIds
+);
+
+// 4. Secure SSM Bastion Host
+// Deployed to all environments to allow developers (with IAM permission) to securely 
+// tunnel from localhost directly into the RDS Proxy using AWS Systems Manager, 
+// without exposing the database to the internet.
+createSsmBastion(
+    projectCode,
+    environment,
+    vpcStack.vpcId,
+    vpcStack.privateSubnetIds.apply(ids => ids[0]) // Just place it in the first available private subnet
 );
 
 const cacheEndpointUrl = cacheStack.redisCluster.primaryEndpointAddress;
