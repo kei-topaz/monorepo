@@ -44,7 +44,7 @@ const cacheStack = createCache(
     vpcStack.isolatedSubnetIds
 );
 
-const cacheEndpointUrl = cacheStack.serverlessCache.endpoints.apply((eps: any) => eps[0].address as string);
+const cacheEndpointUrl = cacheStack.redisCluster.primaryEndpointAddress;
 
 // ACM Certificate Lookup (Now strictly required for deployment)
 // Pulumi will automatically fetch the latest ISSUED certificate for this domain and attach it to the ALB.

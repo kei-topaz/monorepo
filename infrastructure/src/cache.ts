@@ -23,31 +23,27 @@ export function createCache(
         }
     });
 
-    // 2. Serverless Cache Cluster
-    // ElastiCache Serverless completely hides node management. You don't pick instance types.
-    // You only pay for the data stored (GB/month) and data processed (ECPU/month).
-    const serverlessCache = new aws.elasticache.ServerlessCache(`${projectCode}-${environment}-cache`, {
-        engine: "redis",
-        // We link it to the exact same isolated subnets the database lives in
+    // 2. Cache Subnet Group
+    // Needed to tell ElastiCache exactly which subnets it's allowed to launch nodes in
+    const cacheSubnetGroup = new aws.elasticache.SubnetGroup(`${projectCode}-${environment}-cache-subnet`, {
         subnetIds: isolatedSubnetIds,
-        securityGroupIds: [cacheSecurityGroup.id],
-
-        // Limits:
-        // In Dev, we restrict it tightly so we don't accidentally run up a bill with a bug.
-        // In Prod, we give it higher limits to handle true scale.
-        cacheUsageLimits: {
-            dataStorage: {
-                maximum: environment === "prod" ? 50 : 1, // GB
-                unit: "GB",
-            },
-            ecpuPerSeconds: [{
-                maximum: environment === "prod" ? 50000 : 5000,
-            }]
-        },
-
-        // Optional but recommended for production security
-        description: `Serverless Redis for ${environment}`,
     });
 
-    return { serverlessCache, cacheSecurityGroup };
+    // 3. Provisioned Redis Replication Group
+    // We provision a tiny t4g.micro instance in 2 Availability Zones for high availability.
+    // If the primary node fails, AWS automatically promotes the replica.
+    const redisCluster = new aws.elasticache.ReplicationGroup(`${projectCode}-${environment}-redis`, {
+        engine: "redis",
+        engineVersion: "7.1", // Modern Redis version
+        nodeType: "cache.t4g.micro",
+        numCacheClusters: 2, // 1 Primary, 1 Replica for Multi-AZ
+        automaticFailoverEnabled: true,
+        subnetGroupName: cacheSubnetGroup.name,
+        securityGroupIds: [cacheSecurityGroup.id],
+        description: `Provisioned Multi-AZ Redis for ${environment}`,
+        atRestEncryptionEnabled: true,
+        transitEncryptionEnabled: true,
+    });
+
+    return { redisCluster, cacheSecurityGroup };
 }

@@ -90,9 +90,10 @@ export function createDatabase(
 
         // This is the magic for Serverless v2. 
         // 1 ACU (Aurora Capacity Unit) = ~2GB RAM.
-        // In Dev, we might cap this at 2. In Prod, 64 or 128.
+        // We set minCapacity to 0.5 (1GB RAM) for both dev and prod to save baseline costs.
+        // It will still smoothly scale up to 128.0 ACU in prod if traffic spikes.
         serverlessv2ScalingConfiguration: {
-            minCapacity: environment === "prod" ? 2.0 : 0.5,
+            minCapacity: 0.5,
             maxCapacity: environment === "prod" ? 128.0 : 2.0,
         },
 
