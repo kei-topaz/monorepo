@@ -210,6 +210,7 @@ export function createDatabase(
         dbProxyName: proxy.name,
         connectionPoolConfig: {
             maxConnectionsPercent: 100, // Use all available connections of the cluster
+            connectionBorrowTimeout: 120, // If the DB is maxed out, queue Ktor traffic for 120 seconds before failing
         },
     });
 

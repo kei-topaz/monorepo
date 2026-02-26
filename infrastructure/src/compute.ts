@@ -203,8 +203,9 @@ export function createAppService(
         healthCheck: {
             path: "/health",
             protocol: "HTTP",
-            interval: 30,
+            interval: 15,
             healthyThreshold: 2,
+            unhealthyThreshold: 2,
         },
     });
 
@@ -286,6 +287,10 @@ export function createAppService(
         taskDefinition: taskDefinition.arn,
         desiredCount: environment === "prod" ? 2 : 1, // HA in Prod
         launchType: "FARGATE",
+        deploymentCircuitBreaker: {
+            enable: true,
+            rollback: true,
+        },
         networkConfiguration: {
             assignPublicIp: false,
             subnets: privateSubnetIds,
