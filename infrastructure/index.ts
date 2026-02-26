@@ -15,10 +15,11 @@ const projectCode = config.require("projectCode"); // e.g. "chassis"
 const domainName = config.require("domainName");
 
 // AWS Region and desired AZs for NCP alignment
-const targetAzs = [
-    "ap-northeast-2a",
-    "ap-northeast-2c"
-];
+// Cost Saving: In Dev, we only build in 1 AZ to force all resources (NAT, DB, ECS) into the exact same physical datacenter.
+// This prevents cross-AZ data transfer costs completely.
+const targetAzs = environment === "prod"
+    ? ["ap-northeast-2a", "ap-northeast-2c"]
+    : ["ap-northeast-2a"];
 
 // 2. Map the Stacks
 // Networking

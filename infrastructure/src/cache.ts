@@ -36,8 +36,8 @@ export function createCache(
         engine: "redis",
         engineVersion: "7.1", // Modern Redis version
         nodeType: "cache.t4g.micro",
-        numCacheClusters: 2, // 1 Primary, 1 Replica for Multi-AZ
-        automaticFailoverEnabled: true,
+        numCacheClusters: environment === "prod" ? 2 : 1, // 1 Primary, 1 Replica for Multi-AZ (Prod only)
+        automaticFailoverEnabled: environment === "prod", // Requires 2+ nodes
         subnetGroupName: cacheSubnetGroup.name,
         securityGroupIds: [cacheSecurityGroup.id],
         description: `Provisioned Multi-AZ Redis for ${environment}`,

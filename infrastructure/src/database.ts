@@ -105,9 +105,9 @@ export function createDatabase(
     });
 
     // 5. Cluster Instances (Compute Nodes)
-    // We want exactly 2 instances in total: 1 Writer, 1 Reader (replica).
-    // Aurora handles the load balancing across Readers automatically via the Reader Endpoint.
-    const instanceCount = 2;
+    // We want 2 instances in Prod (1 Writer, 1 HA Reader replica).
+    // In Dev, we only boot 1 instance (Writer) to save ~$250/month.
+    const instanceCount = environment === "prod" ? 2 : 1;
     const instances = [];
     for (let i = 0; i < instanceCount; i++) {
         instances.push(new aws.rds.ClusterInstance(`${projectCode}-${environment}-db-instance-${i}`, {
