@@ -316,7 +316,7 @@ export function createAppService(
             scalableDimension: scalingTarget.scalableDimension,
             serviceNamespace: scalingTarget.serviceNamespace,
             targetTrackingScalingPolicyConfiguration: {
-                targetValue: 70.0, // Scale out if average CPU usage hits 70%
+                targetValue: 50.0, // Scale out if average CPU usage hits 50% (Provides maximum reliability buffer)
                 predefinedMetricSpecification: {
                     predefinedMetricType: "ECSServiceAverageCPUUtilization",
                 },
