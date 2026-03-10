@@ -1,5 +1,3 @@
-package com.project.api.tools
-
 import com.project.api.module
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.*
@@ -60,7 +58,7 @@ fun main() {
                 "",
             )
 
-        val file = File("src/main/resources/openapi.json")
+        val file = File("tools/openapi/openapi.json")
         file.parentFile.mkdirs()
         file.writeText(patchedContent)
 

@@ -12,6 +12,7 @@ application {
 
 sourceSets {
     create("tools") {
+        kotlin.srcDir("tools/openapi")
         compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output
         runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output
     }
@@ -76,11 +77,11 @@ dependencies {
 
 val exportOpenApi by tasks.registering(JavaExec::class) {
     group = "openapi"
-    description = "Exports and patches the OpenAPI JSON spec to src/main/resources"
+    description = "Exports and patches the OpenAPI JSON spec to tools/openapi"
     classpath = sourceSets["tools"].runtimeClasspath
-    mainClass.set("com.project.api.tools.ExportOpenApiKt")
+    mainClass.set("ExportOpenApiKt")
     workingDir = projectDir
-    outputs.file("src/main/resources/openapi.json")
+    outputs.file("tools/openapi/openapi.json")
 }
 
 val verifyOpenApi by tasks.registering {
@@ -90,7 +91,7 @@ val verifyOpenApi by tasks.registering {
     doLast {
         try {
             val process =
-                ProcessBuilder("git", "status", "--porcelain", "src/main/resources/openapi.json")
+                ProcessBuilder("git", "status", "--porcelain", "tools/openapi/openapi.json")
                     .directory(projectDir)
                     .start()
 
