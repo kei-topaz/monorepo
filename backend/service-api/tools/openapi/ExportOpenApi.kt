@@ -1,4 +1,4 @@
-import com.project.api.module
+import serviceapi.module
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -14,7 +14,7 @@ fun main() {
                 try {
                     // Provide an empty module to bypass DB/Redis init
                     module(org.koin.dsl.module { 
-                        single<List<com.project.api.routers.core.Router>> { emptyList() }
+                        single<List<serviceapi.routers.core.Router>> { emptyList() }
                     })
                 } catch (e: Exception) {
                     System.err.println("CRITICAL ERROR in ExportOpenApi Application Module Setup:")
@@ -50,11 +50,11 @@ fun main() {
             )
 
         // Automated Patch 2: Simplify Schema Names (remove package prefixes)
-        // Replaces "com.project.api.handlers.user.RegisterRequest" with "RegisterRequest"
+        // Replaces "serviceapi.handlers.user.RegisterRequest" with "RegisterRequest"
         // Matches standard Kotlin package patterns followed by valid class name
         patchedContent =
             patchedContent.replace(
-                "com\\.project\\.api\\.handlers\\.[a-z]+\\.".toRegex(),
+                "serviceapi\\.handlers\\.[a-z]+\\.".toRegex(),
                 "",
             )
 

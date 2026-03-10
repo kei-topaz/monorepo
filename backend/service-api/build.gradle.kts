@@ -7,7 +7,7 @@ plugins {
 }
 
 application {
-    mainClass.set("com.project.api.ApplicationKt")
+    mainClass.set("serviceapi.ApplicationKt")
 }
 
 sourceSets {

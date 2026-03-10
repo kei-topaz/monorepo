@@ -25,4 +25,4 @@ dependencies {
 }
 
 // Note: You will need to update your jOOQ code generation configuration
-// to target the new package: com.project.data.sql.generated
+// to target the new package: datarepository.sql.generated

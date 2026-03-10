@@ -5,7 +5,7 @@ plugins {
 }
 
 application {
-    mainClass.set("com.project.admin.ApplicationKt")
+    mainClass.set("adminapi.ApplicationKt")
 }
 
 dependencies {
