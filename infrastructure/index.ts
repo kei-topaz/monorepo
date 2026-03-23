@@ -6,6 +6,7 @@ import { createCache } from "./src/cache";
 import { createSharedCompute, createAppService } from "./src/compute";
 import { createEcrRepository } from "./src/ecr";
 import { createSsmBastion } from "./src/bastion";
+import { createAlbAccessLogs, createServiceLogGroup, createDatabaseLogs } from "./src/logging";
 // import { createSecurityNotifications } from "./src/notifications";
 
 // 1. Core Configuration
@@ -61,6 +62,12 @@ const bastionStack = createSsmBastion(
 
 const cacheEndpointUrl = cacheStack.redisCluster.primaryEndpointAddress;
 
+// Logging
+const albLogs = createAlbAccessLogs(projectCode, environment);
+const serviceLogGroup = createServiceLogGroup(projectCode, environment, "service");
+const adminLogGroup = createServiceLogGroup(projectCode, environment, "admin");
+createDatabaseLogs(projectCode, environment);
+
 // ACM Certificate Lookup (Now strictly required for deployment)
 // Pulumi will automatically fetch the latest ISSUED certificate for this domain and attach it to the ALB.
 const cert = aws.acm.getCertificate({
@@ -76,7 +83,8 @@ const sharedCompute = createSharedCompute(
     environment,
     vpcStack.vpcId,
     vpcStack.publicSubnetIds,
-    certificateArn // The ALB now explicitly requires this ARN to boot Port 443
+    certificateArn, // The ALB now explicitly requires this ARN to boot Port 443
+    albLogs.accessLogsBucket
 );
 
 const isProd = environment === "prod";
@@ -101,6 +109,7 @@ const apiService = createAppService(
     serviceImageTag,
     dbStack.proxyEndpoint,
     cacheEndpointUrl,
+    serviceLogGroup,
     isProd ? "1024" : "512",
     isProd ? "2048" : "1024"
 );
@@ -120,6 +129,7 @@ const adminService = createAppService(
     adminImageTag,
     dbStack.proxyEndpoint,
     cacheEndpointUrl,
+    adminLogGroup,
     isProd ? "1024" : "512",
     isProd ? "2048" : "1024"
 );

@@ -32,6 +32,7 @@ export function createSsmBastion(
         }],
         tags: {
             Name: `${projectCode}-${environment}-bastion-sg`,
+            Project: projectCode,
             Environment: environment,
         },
     });
@@ -40,6 +41,7 @@ export function createSsmBastion(
     // This allows the EC2 instance to securely register itself with the AWS Systems Manager service
     const bastionRole = new aws.iam.Role(`${projectCode}-${environment}-bastion-role`, {
         assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({ Service: "ec2.amazonaws.com" }),
+        tags: { Project: projectCode, Environment: environment },
     });
 
     // Attach the core AmazonSSMManagedInstanceCore policy
@@ -74,6 +76,7 @@ export function createSsmBastion(
         // No SSH Key Pair is assigned because we use SSM exclusively!
         tags: {
             Name: `${projectCode}-${environment}-bastion`,
+            Project: projectCode,
             Environment: environment,
         },
     });

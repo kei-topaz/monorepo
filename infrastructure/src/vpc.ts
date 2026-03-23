@@ -1,5 +1,4 @@
 import * as awsx from "@pulumi/awsx";
-import * as aws from "@pulumi/aws";
 
 // A function to create the VPC based on the environment (dev or prod)
 // We also pass the exact Availability Zones we want to align with NCP.

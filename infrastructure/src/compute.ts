@@ -1,5 +1,4 @@
 import * as aws from "@pulumi/aws";
-import * as awsx from "@pulumi/awsx";
 import * as pulumi from "@pulumi/pulumi";
 
 // Creates the shared Cluster, Application Load Balancer, and default HTTP Listener
@@ -8,7 +7,8 @@ export function createSharedCompute(
     environment: string,
     vpcId: pulumi.Input<string>,
     publicSubnetIds: pulumi.Input<string[]>,
-    certificateArn: pulumi.Input<string>
+    certificateArn: pulumi.Input<string>,
+    accessLogsBucket: aws.s3.BucketV2
 ) {
     // 1. ECS Cluster (Shared across all services)
     const cluster = new aws.ecs.Cluster(`${projectCode}-${environment}-cluster`, {
@@ -45,6 +45,10 @@ export function createSharedCompute(
         loadBalancerType: "application",
         // Security best practice: drop malformed headers to prevent HTTP desync/smuggling attacks
         dropInvalidHeaderFields: true,
+        accessLogs: {
+            bucket: accessLogsBucket.bucket,
+            enabled: true,
+        },
         tags: {
             Name: `${projectCode}-${environment}-alb`,
             Project: projectCode,
@@ -76,6 +80,7 @@ export function createSharedCompute(
         port: 443,
         protocol: "HTTPS",
         certificateArn: certificateArn,
+        sslPolicy: "ELBSecurityPolicy-TLS13-1-2-2021-06", // Enforce TLS 1.2+ minimum
         defaultActions: [{
             type: "fixed-response",
             fixedResponse: {
@@ -187,6 +192,7 @@ export function createAppService(
     imageTag: string,                    // e.g., "latest" or a git SHA like "abc123f"
     proxyEndpoint: pulumi.Input<string>,
     cacheEndpoint: pulumi.Output<string>,
+    logGroup: aws.cloudwatch.LogGroup,
     cpu: string = "512",
     memory: string = "1024"
 ) {
@@ -262,13 +268,7 @@ export function createAppService(
         },
     });
 
-    // 5. CloudWatch Log Group (must be created before the Task Definition references it)
-    const logGroup = new aws.cloudwatch.LogGroup(`${projectCode}-${environment}-${serviceCode}-logs`, {
-        name: `/ecs/${projectCode}-${environment}-${serviceCode}`,
-        retentionInDays: environment === "prod" ? 30 : 7,
-    });
-
-    // 6. ECS Task Definition & Service
+    // 5. ECS Task Definition & Service
     const taskDefinition = new aws.ecs.TaskDefinition(`${projectCode}-${environment}-${serviceCode}-task-def`, {
         family: `${projectCode}-${environment}-${serviceCode}`,
         cpu: cpu,
@@ -325,7 +325,7 @@ export function createAppService(
         },
     }, { dependsOn: [logGroup] });
 
-    // 7. Application Auto Scaling for the Service
+    // 6. Application Auto Scaling for the Service
     // We only enable auto-scaling in Production to save costs in Dev.
     if (environment === "prod") {
         const scalingTarget = new aws.appautoscaling.Target(`${projectCode}-${environment}-${serviceCode}-scaling-target`, {

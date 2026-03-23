@@ -1,5 +1,4 @@
 import * as aws from "@pulumi/aws";
-import * as awsx from "@pulumi/awsx";
 import * as pulumi from "@pulumi/pulumi";
 import * as random from "@pulumi/random";
 
@@ -104,6 +103,9 @@ export function createDatabase(
         // Skip final snapshot in dev to save time/money when testing teardowns
         backupRetentionPeriod: environment === "prod" ? 14 : 1,
         skipFinalSnapshot: environment !== "prod",
+
+        // Export PostgreSQL logs to CloudWatch for debugging and auditing
+        enabledCloudwatchLogsExports: ["postgresql"],
 
         // Physically prevent accidental deletion of the production database
         deletionProtection: environment === "prod",
