@@ -39,6 +39,11 @@ export function createVpc(
                 // Dev/Staging gets a single NAT to save $45/month.
                 : awsx.ec2.NatGatewayStrategy.Single,
         },
+        tags: {
+            Name: `${projectCode}-${environment}-vpc`,
+            Project: projectCode,
+            Environment: environment,
+        },
     });
 
     return vpc;

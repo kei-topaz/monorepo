@@ -5,5 +5,5 @@ config:
   # The core prefix used across all AWS resource names
   infra:projectCode: dc
   # The domain name validated in AWS ACM for the App Load Balancer TLS certificate
-  infra:domainName: dc.triptopaz.com
+  infra:domainName: dc-dev.triptopaz.com
 encryptionsalt: v1:2JcoF04UL9E=:v1:WYeKN0FyrLIN7rMm:GjyOj0Wet47vWuVp2sXOnIcLZgDsKQ==

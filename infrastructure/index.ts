@@ -14,6 +14,8 @@ const config = new pulumi.Config();
 const environment = config.require("environment"); // "dev" or "prod"
 const projectCode = config.require("projectCode"); // e.g. "chassis"
 const domainName = config.require("domainName");
+const serviceImageTag = config.get("serviceImageTag") || "latest";
+const adminImageTag = config.get("adminImageTag") || "latest";
 
 // AWS Region and desired AZs for NCP alignment
 // Cost Saving: In Dev, we only build in 1 AZ to force all resources (NAT, DB, ECS) into the exact same physical datacenter.
@@ -50,7 +52,7 @@ const cacheStack = createCache(
 // Deployed to all environments to allow developers (with IAM permission) to securely 
 // tunnel from localhost directly into the RDS Proxy using AWS Systems Manager, 
 // without exposing the database to the internet.
-createSsmBastion(
+const bastionStack = createSsmBastion(
     projectCode,
     environment,
     vpcStack.vpcId,
@@ -96,6 +98,7 @@ const apiService = createAppService(
     "/service/*", // Routing path for API
     8080,         // Container port
     apiEcrRepo.repositoryUrl,
+    serviceImageTag,
     dbStack.proxyEndpoint,
     cacheEndpointUrl,
     isProd ? "1024" : "512",
@@ -114,11 +117,47 @@ const adminService = createAppService(
     "/admin/*", // Routing path for Admin
     8081,       // Container port (can be 8080 as well)
     adminEcrRepo.repositoryUrl,
+    adminImageTag,
     dbStack.proxyEndpoint,
     cacheEndpointUrl,
     isProd ? "1024" : "512",
     isProd ? "2048" : "1024"
 );
+
+// Security Group Ingress Rules
+// Wire up DB and cache access by SG reference (no hardcoded CIDRs).
+// Each rule allows a specific source SG to reach the data layer on its required port.
+const dbIngressSources = [
+    { name: "service", sgId: apiService.appSecurityGroup.id },
+    { name: "admin", sgId: adminService.appSecurityGroup.id },
+    { name: "bastion", sgId: bastionStack.bastionSecurityGroup.id },
+];
+for (const source of dbIngressSources) {
+    new aws.ec2.SecurityGroupRule(`${projectCode}-${environment}-db-from-${source.name}`, {
+        type: "ingress",
+        securityGroupId: dbStack.dbSecurityGroup.id,
+        sourceSecurityGroupId: source.sgId,
+        protocol: "tcp",
+        fromPort: 5432,
+        toPort: 5432,
+    });
+}
+
+const cacheIngressSources = [
+    { name: "service", sgId: apiService.appSecurityGroup.id },
+    { name: "admin", sgId: adminService.appSecurityGroup.id },
+    { name: "bastion", sgId: bastionStack.bastionSecurityGroup.id },
+];
+for (const source of cacheIngressSources) {
+    new aws.ec2.SecurityGroupRule(`${projectCode}-${environment}-cache-from-${source.name}`, {
+        type: "ingress",
+        securityGroupId: cacheStack.cacheSecurityGroup.id,
+        sourceSecurityGroupId: source.sgId,
+        protocol: "tcp",
+        fromPort: 6379,
+        toPort: 6379,
+    });
+}
 
 // 3. Export the critical endpoints so we can see them when `pulumi up` finishes
 export const loadBalancerUrl = sharedCompute.alb.dnsName;

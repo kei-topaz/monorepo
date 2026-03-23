@@ -5,10 +5,15 @@ import * as aws from "@pulumi/aws";
 export function createEcrRepository(projectCode: string, environment: string, serviceCode: string) {
     const repository = new aws.ecr.Repository(`${projectCode}-${environment}-${serviceCode}-repo`, {
         name: `${projectCode}/${environment}/${serviceCode}`,
-        imageTagMutability: "MUTABLE", // Allows the 'latest' tag to be overwritten by new pushes
+        imageTagMutability: environment === "prod" ? "IMMUTABLE" : "MUTABLE",
         forceDelete: environment !== "prod", // Allows Pulumi to delete the repo in Dev even if it contains images
         imageScanningConfiguration: {
             scanOnPush: true, // Automatically scans your Docker images for known vulnerabilities (CVEs)
+        },
+        tags: {
+            Name: `${projectCode}-${environment}-${serviceCode}-repo`,
+            Project: projectCode,
+            Environment: environment,
         },
     });
 

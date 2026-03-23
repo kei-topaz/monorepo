@@ -16,7 +16,12 @@ export function createSharedCompute(
         // Automatically collect granular CPU, memory, and network metrics for all Fargate tasks
         settings: [
             { name: "containerInsights", value: "enabled" }
-        ]
+        ],
+        tags: {
+            Name: `${projectCode}-${environment}-cluster`,
+            Project: projectCode,
+            Environment: environment,
+        }
     });
 
     // 2. Application Load Balancer (ALB) Security Group (Shared)
@@ -29,7 +34,7 @@ export function createSharedCompute(
         egress: [
             { protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"] }
         ],
-        tags: { Name: `${projectCode}-${environment}-alb-sg` }
+        tags: { Name: `${projectCode}-${environment}-alb-sg`, Project: projectCode, Environment: environment }
     });
 
     // 3. Application Load Balancer (Shared)
@@ -40,9 +45,14 @@ export function createSharedCompute(
         loadBalancerType: "application",
         // Security best practice: drop malformed headers to prevent HTTP desync/smuggling attacks
         dropInvalidHeaderFields: true,
+        tags: {
+            Name: `${projectCode}-${environment}-alb`,
+            Project: projectCode,
+            Environment: environment,
+        },
     });
 
-    // 3. Application Load Balancer Listeners
+    // 4. Application Load Balancer Listeners
     // Listener 1: Port 80 (HTTP)
     // This listener's ONLY job is to aggressively redirect all insecure traffic to HTTPS (Port 443)
     const httpListener = new aws.lb.Listener(`${projectCode}-${environment}-http-listener`, {
@@ -79,7 +89,7 @@ export function createSharedCompute(
     // We strictly return the HTTPS listener for service routes to map onto
     const listener = httpsListener;
 
-    // 4. AWS WAF (Web Application Firewall)
+    // 5. AWS WAF (Web Application Firewall)
     // We attach a WAF directly to the ALB to block bad actors and common exploits like SQLi automatically.
     const wafAcl = new aws.wafv2.WebAcl(`${projectCode}-${environment}-waf`, {
         defaultAction: { allow: {} },
@@ -152,7 +162,7 @@ export function createSharedCompute(
         ],
     });
 
-    // 5. WAF Association
+    // 6. WAF Association
     new aws.wafv2.WebAclAssociation(`${projectCode}-${environment}-waf-assoc`, {
         resourceArn: alb.arn,
         webAclArn: wafAcl.arn,
@@ -174,6 +184,7 @@ export function createAppService(
     pathPrefix: string,                 // e.g., "/api/*" or "/admin/*"
     containerPort: number,
     ecrRepoUrl: pulumi.Input<string>,   // The ECR repository URL
+    imageTag: string,                    // e.g., "latest" or a git SHA like "abc123f"
     proxyEndpoint: pulumi.Input<string>,
     cacheEndpoint: pulumi.Output<string>,
     cpu: string = "512",
@@ -191,7 +202,7 @@ export function createAppService(
         egress: [
             { protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"] }
         ],
-        tags: { Name: `${projectCode}-${environment}-${serviceCode}-app-sg` }
+        tags: { Name: `${projectCode}-${environment}-${serviceCode}-app-sg`, Project: projectCode, Environment: environment }
     });
 
     // 2. Target Group for this specific service
@@ -200,6 +211,8 @@ export function createAppService(
         protocol: "HTTP",
         targetType: "ip",
         vpcId: vpcId,
+        deregistrationDelay: 180,
+        tags: { Name: `${projectCode}-${environment}-${serviceCode}-tg`, Project: projectCode, Environment: environment },
         healthCheck: {
             path: "/health",
             protocol: "HTTP",
@@ -226,6 +239,7 @@ export function createAppService(
     // 4. Service-specific IAM Roles
     const taskExecutionRole = new aws.iam.Role(`${projectCode}-${environment}-${serviceCode}-exec-role`, {
         assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({ Service: "ecs-tasks.amazonaws.com" }),
+        tags: { Project: projectCode, Environment: environment },
     });
     new aws.iam.RolePolicyAttachment(`${projectCode}-${environment}-${serviceCode}-exec-policy`, {
         role: taskExecutionRole.name,
@@ -234,6 +248,7 @@ export function createAppService(
 
     const taskRole = new aws.iam.Role(`${projectCode}-${environment}-${serviceCode}-task-role`, {
         assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({ Service: "ecs-tasks.amazonaws.com" }),
+        tags: { Project: projectCode, Environment: environment },
     });
     new aws.iam.RolePolicy(`${projectCode}-${environment}-${serviceCode}-db-auth-policy`, {
         role: taskRole.id,
@@ -247,7 +262,13 @@ export function createAppService(
         },
     });
 
-    // 5. ECS Task Definition & Service
+    // 5. CloudWatch Log Group (must be created before the Task Definition references it)
+    const logGroup = new aws.cloudwatch.LogGroup(`${projectCode}-${environment}-${serviceCode}-logs`, {
+        name: `/ecs/${projectCode}-${environment}-${serviceCode}`,
+        retentionInDays: environment === "prod" ? 30 : 7,
+    });
+
+    // 6. ECS Task Definition & Service
     const taskDefinition = new aws.ecs.TaskDefinition(`${projectCode}-${environment}-${serviceCode}-task-def`, {
         family: `${projectCode}-${environment}-${serviceCode}`,
         cpu: cpu,
@@ -258,7 +279,7 @@ export function createAppService(
         taskRoleArn: taskRole.arn,
         containerDefinitions: pulumi.jsonStringify([{
             name: serviceCode,
-            image: pulumi.interpolate`${ecrRepoUrl}:latest`, // Automatically pull the 'latest' tagged image from ECR
+            image: pulumi.interpolate`${ecrRepoUrl}:${imageTag}`,
             portMappings: [{ containerPort: containerPort, hostPort: containerPort }],
             environment: [
                 { name: "ENVIRONMENT", value: environment },
@@ -270,16 +291,12 @@ export function createAppService(
             logConfiguration: {
                 logDriver: "awslogs",
                 options: {
-                    "awslogs-group": `/ecs/${projectCode}-${environment}-${serviceCode}`,
-                    "awslogs-region": "ap-northeast-2",
+                    "awslogs-group": logGroup.name,
+                    "awslogs-region": aws.getRegionOutput().name,
                     "awslogs-stream-prefix": "ecs"
                 }
             }
         }]),
-    });
-
-    const CloudWatchLogGroup = new aws.cloudwatch.LogGroup(`/ecs/${projectCode}-${environment}-${serviceCode}`, {
-        retentionInDays: environment === "prod" ? 30 : 7,
     });
 
     const service = new aws.ecs.Service(`${projectCode}-${environment}-${serviceCode}-ecs-service`, {
@@ -301,9 +318,14 @@ export function createAppService(
             containerName: serviceCode,
             containerPort: containerPort,
         }],
-    }, { dependsOn: [CloudWatchLogGroup] });
+        tags: {
+            Name: `${projectCode}-${environment}-${serviceCode}-ecs-service`,
+            Project: projectCode,
+            Environment: environment,
+        },
+    }, { dependsOn: [logGroup] });
 
-    // 6. Application Auto Scaling for the Service
+    // 7. Application Auto Scaling for the Service
     // We only enable auto-scaling in Production to save costs in Dev.
     if (environment === "prod") {
         const scalingTarget = new aws.appautoscaling.Target(`${projectCode}-${environment}-${serviceCode}-scaling-target`, {
@@ -331,5 +353,5 @@ export function createAppService(
         });
     }
 
-    return { service, targetGroup };
+    return { service, targetGroup, appSecurityGroup };
 }

@@ -24,22 +24,22 @@ export function createDatabase(
         subnetIds: isolatedSubnetIds,
         tags: {
             Name: `${projectCode}-${environment}-db-subnets`,
+            Project: projectCode,
+            Environment: environment,
         },
     });
 
     // 2. Security Group
     // We only allow traffic on port 5432 (PostgreSQL) from *within* the VPC. 
     // No one from the internet can reach this database.
+    // Ingress rules are added separately in index.ts using SecurityGroupRule resources,
+    // so that app service and bastion SGs can be referenced by ID (no hardcoded CIDRs).
     const dbSecurityGroup = new aws.ec2.SecurityGroup(`${projectCode}-${environment}-db-sg`, {
         vpcId: vpcId,
-        ingress: [{
-            protocol: "tcp",
-            fromPort: 5432,
-            toPort: 5432,
-            cidrBlocks: ["10.0.0.0/16"], // Assuming default VPC CIDR from awsx
-        }],
         tags: {
             Name: `${projectCode}-${environment}-db-sg`,
+            Project: projectCode,
+            Environment: environment,
         }
     });
 
@@ -57,6 +57,10 @@ export function createDatabase(
     const dbSecret = new aws.secretsmanager.Secret(`${projectCode}-${environment}-db-secret`, {
         name: `${projectCode}/${environment}/database/password`,
         description: `Database admin password for ${environment}`,
+        tags: {
+            Project: projectCode,
+            Environment: environment,
+        },
     });
 
     new aws.secretsmanager.SecretVersion(`${projectCode}-${environment}-db-secret-version`, {
@@ -98,10 +102,16 @@ export function createDatabase(
         },
 
         // Skip final snapshot in dev to save time/money when testing teardowns
+        backupRetentionPeriod: environment === "prod" ? 14 : 1,
         skipFinalSnapshot: environment !== "prod",
 
         // Physically prevent accidental deletion of the production database
         deletionProtection: environment === "prod",
+        tags: {
+            Name: `${projectCode}-${environment}-db-cluster`,
+            Project: projectCode,
+            Environment: environment,
+        },
     });
 
     // 5. Cluster Instances (Compute Nodes)
@@ -119,6 +129,11 @@ export function createDatabase(
 
             // Enable Performance Insights in production for deep SQL query analytics
             performanceInsightsEnabled: environment === "prod",
+            tags: {
+                Name: `${projectCode}-${environment}-db-instance-${i}`,
+                Project: projectCode,
+                Environment: environment,
+            },
             // We can even explicitly pin them to different AZs if we wanted, 
             // but just leaving it blank allows RDS to distribute them automatically across our subnets.
         }));
@@ -137,6 +152,7 @@ export function createDatabase(
     const appSecret = new aws.secretsmanager.Secret(`${projectCode}-${environment}-app-secret`, {
         name: `${projectCode}/${environment}/database/app_user`,
         description: `App user credentials for ${environment}`,
+        tags: { Project: projectCode, Environment: environment },
     });
     new aws.secretsmanager.SecretVersion(`${projectCode}-${environment}-app-secret-version`, {
         secretId: appSecret.id,
@@ -151,6 +167,7 @@ export function createDatabase(
     const devSecret = new aws.secretsmanager.Secret(`${projectCode}-${environment}-dev-secret`, {
         name: `${projectCode}/${environment}/database/dev_user`,
         description: `Developer user credentials for ${environment}`,
+        tags: { Project: projectCode, Environment: environment },
     });
     new aws.secretsmanager.SecretVersion(`${projectCode}-${environment}-dev-secret-version`, {
         secretId: devSecret.id,
@@ -161,6 +178,7 @@ export function createDatabase(
     // RDS Proxy needs its own IAM Role to access Secrets Manager so it can authenticate connections.
     const proxyIamRole = new aws.iam.Role(`${projectCode}-${environment}-rds-proxy-role`, {
         assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({ Service: "rds.amazonaws.com" }),
+        tags: { Project: projectCode, Environment: environment },
     });
 
     new aws.iam.RolePolicy(`${projectCode}-${environment}-rds-proxy-policy`, {
@@ -203,6 +221,11 @@ export function createDatabase(
             }
         ],
         requireTls: true, // Force encrypted connections
+        tags: {
+            Name: `${projectCode}-${environment}-db-proxy`,
+            Project: projectCode,
+            Environment: environment,
+        },
     });
 
     // Attach the proxy to our cluster
