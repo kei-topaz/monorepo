@@ -66,6 +66,7 @@ hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 # Utils
 dotenv = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenv" }
 aws-secretsmanager = { module = "software.amazon.awssdk:secretsmanager", version.ref = "aws-secrets" }
+aws-rds = { module = "software.amazon.awssdk:rds", version.ref = "aws-secrets" }
 swagger-ui = { module = "io.github.smiley4:ktor-swagger-ui", version.ref = "swagger" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }

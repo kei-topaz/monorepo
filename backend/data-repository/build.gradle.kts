@@ -22,6 +22,9 @@ dependencies {
     // Database Drivers & Pools
     implementation(libs.hikari)
     implementation(libs.postgresql)
+
+    // AWS IAM Auth for RDS Proxy
+    implementation(libs.aws.rds)
 }
 
 // Note: You will need to update your jOOQ code generation configuration
