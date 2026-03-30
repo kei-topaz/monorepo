@@ -58,7 +58,7 @@ fun main() {
                 "",
             )
 
-        val file = File("tools/openapi/openapi.json")
+        val file = File("../../contract/service-api.openapi.json")
         file.parentFile.mkdirs()
         file.writeText(patchedContent)
 

@@ -75,13 +75,15 @@ dependencies {
     testImplementation(libs.archunit.junit5)
 }
 
+val contractDir = rootProject.projectDir.resolve("../contract")
+
 val exportOpenApi by tasks.registering(JavaExec::class) {
     group = "openapi"
-    description = "Exports and patches the OpenAPI JSON spec to tools/openapi"
+    description = "Exports and patches the OpenAPI JSON spec to contract directory"
     classpath = sourceSets["tools"].runtimeClasspath
     mainClass.set("ExportOpenApiKt")
     workingDir = projectDir
-    outputs.file("tools/openapi/openapi.json")
+    outputs.file(contractDir.resolve("service-api.openapi.json"))
 }
 
 val verifyOpenApi by tasks.registering {
@@ -91,8 +93,8 @@ val verifyOpenApi by tasks.registering {
     doLast {
         try {
             val process =
-                ProcessBuilder("git", "status", "--porcelain", "tools/openapi/openapi.json")
-                    .directory(projectDir)
+                ProcessBuilder("git", "status", "--porcelain", "contract/service-api.openapi.json")
+                    .directory(rootProject.projectDir.resolve(".."))
                     .start()
 
             if (process.waitFor() == 0) {
