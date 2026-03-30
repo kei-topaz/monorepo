@@ -1,0 +1,7 @@
+{
+  "AUTH_INVALID_CREDENTIALS": "이메일 또는 비밀번호가 올바르지 않습니다.",
+  "AUTH_UNAUTHENTICATED": "인증이 필요합니다. 다시 로그인해주세요.",
+  "VALIDATION_ERROR": "입력값을 확인해주세요.",
+  "NETWORK_ERROR": "서버에 연결할 수 없습니다.",
+  "UNKNOWN_ERROR": "오류가 발생했습니다."
+}

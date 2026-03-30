@@ -3,8 +3,19 @@ packages:
   - 'packages/*'
 
 catalog:
-  vue: ^3.4.19
-  vite: ^5.1.4
-  typescript: ^5.2.2
-  vite-plugin-vue: ^5.0.4
-  vue-tsc: ^1.8.27
+  vue: ^3.5.13
+  vite: ^6.1.0
+  typescript: ~5.7.0
+  vue-tsc: ^2.2.0
+
+  # vite plugins
+  '@vitejs/plugin-vue': ^5.2.1
+
+  # vue ecosystem
+  vue-router: ^4.5.0
+  pinia: ^3.0.2
+
+  # primevue
+  primevue: ^4.3.1
+  '@primevue/themes': ^4.3.1
+  primeicons: ^7.0.0

@@ -1,5 +1,17 @@
 import { createApp } from 'vue'
-import './style.css'
-import App from './App.vue'
+import { createPinia } from 'pinia'
+import App from '@/App.vue'
+import router from '@/router'
+import { setupPrimeVue } from '@/plugins/primevue'
+import { setupErrorHandler } from '@/plugins/errorHandler'
+import ToastService from 'primevue/toastservice'
 
-createApp(App).mount('#app')
+const app = createApp(App)
+
+app.use(createPinia())
+setupPrimeVue(app)
+app.use(router)
+app.use(ToastService)
+setupErrorHandler(app)
+
+app.mount('#app')
