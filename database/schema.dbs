@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="StayLink" database="PostgreSQL" id="b03edef8-1858-43f1-8de8-8c9e90403fa2" >
+	<schema name="schema_staylink" >
+		<udt name="enum_admin_user_type" udt_value_type="VARCHAR" udt_precision="ENUMERATION" sync_priority="900" >
+			<udt_script><![CDATA[CREATE TYPE / DOMAIN ${nameWithSchemaName} AS ...
+enum ( 'systemadmin','admin','partner' )]]></udt_script>
+		</udt>
+		<table name="admin_user" prior="admin_" >
+			<column name="id" type="uuid" mandatory="y" >
+				<defo><![CDATA[gen_random_uuid()]]></defo>
+			</column>
+			<column name="email" type="varchar" length="254" mandatory="y" />
+			<column name="password_hash" prior="password" type="char" length="60" mandatory="y" />
+			<column name="user_type" prior="type" type="enum_admin_user_type" mandatory="y" />
+			<column name="created_at" type="timestamptz" mandatory="y" >
+				<defo><![CDATA[CURRENT_TIMESTAMP]]></defo>
+			</column>
+			<column name="updated_at" type="timestamptz" mandatory="y" >
+				<defo><![CDATA[CURRENT_TIMESTAMP]]></defo>
+			</column>
+			<index name="pk_admin_user" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+		</table>
+		<table name="admin_user_session" prior="admin_user_ses" >
+			<column name="id" type="uuid" mandatory="y" >
+				<defo><![CDATA[gen_random_uuid()]]></defo>
+			</column>
+			<column name="admin_user_id" type="uuid" mandatory="y" />
+			<column name="session_id" type="char" length="64" mandatory="y" />
+			<column name="created_at" type="timestamptz" mandatory="y" >
+				<defo><![CDATA[CURRENT_TIMESTAMP]]></defo>
+			</column>
+			<column name="updated_at" type="timestamptz" mandatory="y" >
+				<defo><![CDATA[CURRENT_TIMESTAMP]]></defo>
+			</column>
+			<index name="pk_admin_user_session" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<fk name="fk_admin_user_session" to_schema="schema_staylink" to_table="admin_user" options="" >
+				<fk_column name="admin_user_id" pk="id" />
+			</fk>
+		</table>
+		<function name="update_updated_at" id="9e16e4c1-a0b3-422a-8c11-e70c455eaa5e" isSystem="false" params_known="n" >
+			<string><![CDATA[CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;]]></string>
+		</function>
+		<trigger name="admin_user__onupdate_updated_at" table="admin_user" id="7bc3a61d-96a6-4f21-8506-e0a0d699038b" isSystem="false" >
+			<string><![CDATA[CREATE TRIGGER admin_user__onupdate_updated_at
+BEFORE UPDATE ON schema_staylink.admin_user
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();]]></string>
+		</trigger>
+		<trigger name="admin_user_session__onupdate_updated_at" table="admin_user_session" id="728b38c2-b109-470c-9551-de9e9490e199" isSystem="false" >
+			<string><![CDATA[CREATE TRIGGER admin_user_session__onupdate_updated_at
+BEFORE UPDATE ON schema_staylink.admin_user_session
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();]]></string>
+		</trigger>
+	</schema>
+	<diagram_group name="Default" id="c8dedf8f-8fa9-4b0c-b51c-b5373fd0e40d" >
+		<diagram name="Default Diagram" id="17632197-84d7-4faa-a807-d43181490b45" show_relation="columns" >
+			<entity schema="schema_staylink" name="admin_user" color="BED3F4" x="57" y="95" />
+			<entity schema="schema_staylink" name="admin_user_session" color="BED3F4" x="323" y="95" />
+			<group name="admin_auth" color="ECF0F7" >
+				<entity schema="schema_staylink" name="admin_user" />
+				<entity schema="schema_staylink" name="admin_user_session" />
+			</group>
+		</diagram>
+	</diagram_group>
+</project>
