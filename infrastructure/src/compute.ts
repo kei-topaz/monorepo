@@ -59,7 +59,7 @@ export function createSharedCompute(
     // 4. Application Load Balancer Listeners
     // Listener 1: Port 80 (HTTP)
     // This listener's ONLY job is to aggressively redirect all insecure traffic to HTTPS (Port 443)
-    const httpListener = new aws.lb.Listener(`${projectCode}-${environment}-http-listener`, {
+    new aws.lb.Listener(`${projectCode}-${environment}-http-listener`, {
         loadBalancerArn: alb.arn,
         port: 80,
         protocol: "HTTP",
@@ -218,6 +218,7 @@ export function createAppService(
         targetType: "ip",
         vpcId: vpcId,
         deregistrationDelay: 180,
+        slowStart: 30,
         tags: { Name: `${projectCode}-${environment}-${serviceCode}-tg`, Project: projectCode, Environment: environment },
         healthCheck: {
             path: "/health",
