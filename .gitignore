@@ -91,3 +91,6 @@ dist/
 npm-debug.log
 yarn-error.log
 pnpm-debug.log
+
+# DBSchema backup
+*.dbs.bak
